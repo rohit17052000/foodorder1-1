@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>JavaGoat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary-color: #0984e3; 
+            --primary-gradient: linear-gradient(135deg, #0984e3 0%, #0097e6 100%);
+            --secondary-color: #f4f6f8; 
+            --text-color: #2d3436;
+            --light-text: #636e72;
+            --border-color: #dfe6e9;
+            --white: #ffffff;
+            --danger: #d63031; 
+            --success: #00b894;
+            --warning: #f39c12;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        .app-wrapper {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            background-color: var(--secondary-color);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            background-color: var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .page.active { 
+            opacity: 1;
+            visibility: visible;
+            z-index: 5; 
+        }
+
+        /* --- AUTH --- */
+        .auth-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center; 
+            padding: 20px;
+            box-sizing: border-box;
+            background: var(--secondary-color);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .auth-card {
+            background: white;
+            width: 100%;
+            max-width: 450px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: relative;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .auth-card-left { display: none; }
+        .auth-card-right {
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 768px) {
+            .auth-card { max-width: 900px; flex-direction: row; min-height: 550px; }
+            #registerPage .auth-card { flex-direction: row-reverse; }
+            .auth-card-left {
+                display: flex; width: 45%; background: var(--primary-gradient); color: white;
+                flex-direction: column; justify-content: center; align-items: center; 
+                text-align: center; padding: 40px; box-sizing: border-box;
+            }
+            .auth-card-left h2 { font-size: 2.2em; margin: 0 0 10px 0; }
+            .auth-card-left p { font-size: 1em; opacity: 0.9; }
+            .auth-card-left i { font-size: 4em; margin-bottom: 20px; }
+            .auth-card-right { width: 55%; padding: 50px; }
+        }
+
+        .auth-header { text-align: center; padding-bottom: 20px; }
+        .logo-circle {
+            width: 65px; height: 65px; margin: 0 auto 12px auto; background: #e0f0ff; color: var(--primary-color);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8em;
+        }
+        .auth-header h1 { font-size: 1.6em; margin: 0; color: #2d3436; font-weight: 700; }
+        .auth-header p { color: #b2bec3; font-size: 0.85em; margin-top: 5px; }
+        .input-label { font-size: 0.75em; color: #636e72; font-weight: 600; margin-bottom: 5px; display: block; }
+        .input-group { position: relative; margin-bottom: 16px; }
+        .input-group i { position: absolute; top: 40px; left: 15px; transform: translateY(-50%); color: #b2bec3; }
+        .auth-input {
+            width: 100%; padding: 14px 14px 14px 42px; background: #f8f9fa; border: 2px solid #f1f2f6; border-radius: 12px; font-size: 16px;
+            outline: none; box-sizing: border-box; font-family: inherit;
+        }
+        .btn-main {
+            width: 100%; padding: 15px; background: var(--primary-gradient); color: var(--white); border: none; border-radius: 12px;
+            font-size: 1.05em; font-weight: 600; cursor: pointer; box-shadow: 0 6px 15px rgba(9, 132, 227, 0.25);
+            margin-bottom: 12px; display: flex; justify-content: center; align-items: center; gap: 10px;
+            touch-action: manipulation;
+        }
+        .btn-main:disabled { background: #bdc3c7; cursor: not-allowed; opacity: 0.8; }
+        .btn-google { background: white; color: #333; border: 1px solid #dfe6e9; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .auth-switch { text-align: center; margin-top: 15px; font-size: 0.9em; color: #636e72; }
+        .auth-switch a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
+        #auth-error { color: var(--danger); text-align: center; margin-bottom: 15px; font-size: 0.85em; display: none; word-break: break-word; }
+
+        .offer-bar {
+            background-color: var(--warning); color: #fff; text-align: center; font-size: 0.8em; font-weight: 600; 
+            padding: 8px; z-index: 20; position: relative; overflow: hidden; white-space: nowrap; flex-shrink: 0;
+        }
+        .offer-bar span { display: inline-block; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+        .app-header {
+            background: var(--primary-gradient); padding: 20px 16px 16px; color: var(--white);
+            border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; z-index: 10; flex-shrink: 0;
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto; }
+        .header-top h1 { font-size: 1.3em; margin: 0; font-weight: 700; display:flex; align-items:center;}
+        .user-greeting { font-size: 0.85em; font-weight: 500; opacity: 0.9; }
+
+        .desktop-nav { display: none; }
+        @media (min-width: 768px) {
+            .app-header { padding: 25px 20px; border-radius: 0; }
+            .desktop-nav { display: flex; gap: 25px; align-items: center; }
+            .desktop-nav .nav-item { color: rgba(255, 255, 255, 0.7); cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 1em; }
+            .desktop-nav .nav-item.active, .desktop-nav .nav-item:hover { color: #ffffff; }
+            .desktop-nav .nav-item p { margin: 0; }
+            .mobile-bottom-nav { display: none !important; }
+        }
+
+        .search-bar { margin: 12px auto 0 auto; position: relative; max-width: 1200px; width: 100%; }
+        .search-bar input { width: 100%; padding: 12px 16px 12px 42px; border: none; border-radius: 30px; font-size: 15px; box-sizing: border-box; }
+        .search-bar .fa-search { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--light-text); }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 95px;
+            box-sizing: border-box;
+        }
+        .main-inner { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 16px; box-sizing: border-box; }
+        @media (min-width: 768px) { main { padding-bottom: 30px; } }
+
+        .category-section { display: flex; justify-content: flex-start; padding: 12px 0; gap: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .category-item { text-align: center; cursor: pointer; background: var(--white); padding: 15px 12px; border-radius: 16px; min-width: 80px; flex-shrink: 0; }
+        .category-item p { margin: 0; font-weight: 600; font-size: 0.85em; }
+        .category-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 8px auto; font-size: 1.4em; }
+        .category-item:nth-child(1) .category-icon { background: #ffe0e0; }
+        .category-item:nth-child(2) .category-icon { background: #e0f0ff; }
+        .category-item:nth-child(3) .category-icon { background: #fff0d4; }
+        .category-item:nth-child(4) .category-icon { background: #f3e5f5; }
+        .category-item:nth-child(5) .category-icon { background: #e8f5e9; }
+        .category-item:nth-child(6) .category-icon { background: #fce4ec; }
+
+        .section-title { font-size: 1.15em; font-weight: 700; margin: 20px 0 12px 0; }
+        .horizontal-scroll { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 15px; gap: 15px; }
+        .card { flex-shrink: 0; width: 150px; background-color: var(--white); border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; position: relative; }
+        @media (min-width: 768px) { .card { width: 220px; } }
+        .card img { width: 100%; height: 110px; object-fit: cover; }
+        .card-content { padding: 12px; position: relative; z-index: 1; }
+        .card-content h3 { margin: 0 0 4px 0; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700;}
+        .card-content p { color: var(--primary-color); font-weight: 700; margin: 0; font-size: 0.9em; }
+        
+        .add-btn { 
+            background-color: var(--primary-color); color: var(--white); border: none; border-radius: 50%; 
+            width: 34px; height: 34px; cursor: pointer; position: absolute; bottom: 10px; right: 10px; 
+            display: flex; align-items: center; justify-content: center; z-index: 10;
+            touch-action: manipulation;
+        }
+
+        #cart-fab-container { position: fixed; bottom: 85px; right: 16px; z-index: 99; touch-action: manipulation; }
+        @media (min-width: 768px) { #cart-fab-container { bottom: 40px; right: 40px; } }
+        .fab-btn { width: 60px; height: 60px; background: var(--primary-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.4em; cursor: pointer; position: relative; box-shadow: 0 6px 20px rgba(9, 132, 227, 0.4); }
+        #cart-count { position: absolute; top: 0; right: 0; background-color: var(--danger); color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 0.8em; display: flex; justify-content: center; align-items: center; font-weight: 800; border: 2px solid white; }
+
+        nav.mobile-bottom-nav { 
+            position: absolute; bottom: 0; left: 0; right: 0; height: 68px; 
+            background: var(--white); display: flex; justify-content: space-around; align-items: center; 
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08); border-radius: 24px 24px 0 0; z-index: 90;
+        }
+        nav .nav-item { display: flex; flex-direction: column; align-items: center; color: #b2bec3; cursor: pointer; flex: 1; touch-action: manipulation; }
+        nav .nav-item.active { color: var(--primary-color); }
+        nav .nav-item i { font-size: 1.3em; margin-bottom: 3px; pointer-events: none; }
+        nav .nav-item p { margin: 0; font-size: 0.7em; font-weight: 600; pointer-events: none; }
+
+        .page-header { padding: 30px 16px 16px; text-align: center; position: relative; background: var(--secondary-color); flex-shrink: 0; }
+        .page-header h2 { margin: 0; font-size: 1.3em; font-weight: 700; }
+        .back-btn { position: absolute; left: 16px; top: 30px; font-size: 1.3em; cursor: pointer; padding: 5px; touch-action: manipulation; }
+        .scrollable-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
+        .inner-content-wrapper { max-width: 700px; margin: 0 auto; width: 100%; box-sizing: border-box;}
+
+        .cart-item { display: flex; align-items: center; background: var(--white); padding: 12px; border-radius: 14px; margin-bottom: 12px; }
+        .cart-item img { width: 65px; height: 65px; border-radius: 10px; object-fit: cover; margin-right: 12px; }
+        .qty-controls { display: flex; align-items: center; gap: 8px; background: #f5f6fa; padding: 4px 10px; border-radius: 18px;}
+        .qty-controls button { background: white; border: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-weight: bold; color: var(--primary-color); }
+
+        .coupon-section { background: var(--white); padding: 15px; border-radius: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
+        .coupon-section input { flex: 1; padding: 12px; border: 2px solid #f1f2f6; border-radius: 10px; font-size: 15px; outline:none; }
+        .coupon-section button { background: var(--primary-color); color: white; padding: 12px 20px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+
+        #map-container { height: 180px; width: 100%; border-radius: 14px; overflow: hidden; margin: 12px 0; border: 2px solid var(--primary-color); display: none; }
+        .location-btn { background-color: #0984e3; color: var(--white); width: 100%; padding: 14px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; margin-bottom: 10px; touch-action: manipulation; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9em; }
+        .form-control { width: 100%; padding: 14px; border: 2px solid #f1f2f6; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 16px; }
+        
+        .otp-group { display: flex; gap: 8px; margin-top: 8px; display: none; }
+        .verify-btn { background-color: #2d3436; color: white; border: none; padding: 0 16px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        .verified-badge { color: var(--success); font-weight: 600; display: none; align-items: center; gap: 6px; margin-top: 8px; background: rgba(0, 184, 148, 0.1); padding: 8px 12px; border-radius: 8px; width: fit-content; font-size: 0.85em; }
+        .or-divider { display: flex; align-items: center; text-align: center; color: #b2bec3; margin: 20px 0; font-weight: 700; font-size: 0.8em; }
+        .or-divider::before, .or-divider::after { content: ''; flex: 1; border-bottom: 2px solid #f1f2f6; }
+
+        .order-card { background: var(--white); border-radius: 16px; padding: 18px; margin-bottom: 15px; }
+        .track-bar { display: flex; justify-content: space-between; position: relative; margin-top: 25px; }
+        .track-bar::before { content: ''; position: absolute; top: 7px; left: 0; right: 0; height: 3px; background: #f1f2f6; z-index: 1; }
+        .track-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 25%; }
+        .dot { width: 16px; height: 16px; background: #dfe6e9; border-radius: 50%; border: 3px solid var(--white); }
+        .track-step p { font-size: 0.65em; margin-top: 8px; color: #b2bec3; font-weight: 700; text-transform: uppercase; }
+        .track-step.active .dot, .track-step.passed .dot { background: var(--primary-color); }
+        .track-step.active p, .track-step.passed p { color: var(--primary-color); }
+
+        .app-footer { background-color: #1e272e; color: #f1f2f6; padding: 30px 16px; margin-top: 40px; border-top-left-radius: 24px; border-top-right-radius: 24px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+
+    <div class="app-wrapper">
+
+        <!-- LOGIN PAGE -->
+        <div id="loginPage" class="page active">
+            <div class="auth-content">
+                <div class="auth-card">
+                    <div class="auth-card-left">
+                        <i class="fas fa-utensils"></i>
+                        <h2>Welcome to JavaGoat</h2>
+                        <p>Order your favorite meals with just a few clicks.</p>
+                    </div>
+                    <div class="auth-card-right">
+                        <div class="auth-header">
+                            <div class="logo-circle"><i class="fas fa-mug-hot"></i></div>
+                            <h1>Welcome Back</h1>
+                            <p>Sign in to continue to JavaGoat</p>
+                        </div>
+                        <div class="auth-body">
+                            <p id="auth-error"></p>
+                            <div class="input-group">
+                                <label class="input-label">EMAIL ADDRESS</label>
+                                <input type="email" id="loginEmail" class="auth-input" placeholder="name@example.com">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">PASSWORD</label>
+                                <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <button class="btn-main" id="loginBtn">Login</button>
+                            <button class="btn-main btn-google" id="googleBtn">
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" width="18"> 
+                                Sign in with Google
+                            </button>
+                            <div class="auth-switch">Don't have an account? <a href="#" id="gotoRegister">Register</a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTER PAGE -->
+        <div id="registerPage" class="page">
+             <div class="auth-content">
+                <div class="auth-card">
+                    <div class="auth-card-left">
+                        <i class="fas fa-user-plus"></i>
+                        <h2>Join the Club</h2>
+                        <p>Create an account to start enjoying exclusive offers and fast delivery.</p>
+                    </div>
+                    <div class="auth-card-right">
+                        <div class="auth-header">
+                            <div class="logo-circle"><i class="fas fa-user-plus"></i></div>
+                            <h1>Create Account</h1>
+                            <p>Join the JavaGoat community</p>
+                        </div>
+                        <div class="auth-body">
+                            <div class="input-group">
+                                <label class="input-label">FULL NAME</label>
+                                <input type="text" id="regName" class="auth-input" placeholder="John Doe">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">PHONE NUMBER</label>
+                                <input type="tel" id="regPhone" class="auth-input" placeholder="+977 9876543210">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">EMAIL ADDRESS</label>
+                                <input type="email" id="registerEmail" class="auth-input" placeholder="name@example.com">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">PASSWORD</label>
+                                <input type="password" id="registerPassword" class="auth-input" placeholder="••••••••">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <button class="btn-main" id="registerBtn">Sign Up</button>
+                            <div class="auth-switch">Already have an account? <a href="#" id="gotoLogin">Login</a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN APP -->
+        <div id="appContainer" class="page">
+            <div class="offer-bar">
+                <span>🚀 <strong>PROMO:</strong> Get 20% off using code: <strong>GOAT20</strong> | 💸 Flat Rs. 50 off using code: <strong>FLAT50</strong> | 🚚 Fast Delivery!</span>
+            </div>
+
+            <header class="app-header">
+                <div class="header-top">
+                    <h1><i class="fas fa-mug-hot" style="margin-right:8px;"></i> JavaGoat</h1>
+                    <div class="desktop-nav">
+                        <div class="nav-item active" data-page="appContainer"><i class="fas fa-home"></i><p>Home</p></div>
+                        <div class="nav-item" data-page="ordersPage"><i class="fas fa-receipt"></i><p>Orders</p></div>
+                        <div class="nav-item logoutBtnClass"><i class="fas fa-sign-out-alt"></i><p>Logout</p></div>
+                    </div>
+                    <div class="user-greeting" id="userGreeting">Hello, Guest</div>
+                </div>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="What are you craving?">
+                </div>
+            </header>
+
+            <main id="mainScroller">
+                <div class="main-inner">
+                    <h2 class="section-title">Explore Categories</h2>
+                    <section class="category-section">
+                        <div class="category-item" onclick="filterCategory('pizza')"><div class="category-icon">🍕</div><p>Pizza</p></div>
+                        <div class="category-item" onclick="filterCategory('burger')"><div class="category-icon">🍔</div><p>Burger</p></div>
+                        <div class="category-item" onclick="filterCategory('coffee')"><div class="category-icon">☕</div><p>Coffee</p></div>
+                        <div class="category-item" onclick="filterCategory('sweet')"><div class="category-icon">🍩</div><p>Sweet</p></div>
+                        <div class="category-item" onclick="filterCategory('healthy')"><div class="category-icon">🥗</div><p>Healthy</p></div>
+                        <div class="category-item" onclick="filterCategory('')"><div class="category-icon">🍽️</div><p>All</p></div>
+                    </section>
+
+                    <h2 class="section-title">Popular Restaurants</h2>
+                    <div class="horizontal-scroll" id="restaurantsContainer"></div>
+
+                    <h2 class="section-title" style="margin-top: 25px;">Recommended Dishes</h2>
+                    <div class="horizontal-scroll" id="dishesContainer"></div>
+                </div>
+
+                <footer class="app-footer">
+                    <p style="margin:0 0 8px 0; font-weight:700;">JavaGoat Food Delivery</p>
+                    <p style="margin:0; color:#a4b0be;">Delivering hot and fresh food to your doorsteps!</p>
+                </footer>
+            </main>
+
+            <!-- Floating Cart Button -->
+            <div id="cart-fab-container">
+                <div class="fab-btn" data-page="cartPage">
+                    <i class="fas fa-shopping-basket"></i>
+                    <div id="cart-count">0</div>
+                </div>
+            </div>
+
+            <!-- Mobile Nav -->
+            <nav class="mobile-bottom-nav">
+                <div class="nav-item active" data-page="appContainer"><i class="fas fa-home"></i><p>Home</p></div>
+                <div class="nav-item" data-page="ordersPage"><i class="fas fa-receipt"></i><p>Orders</p></div>
+                <div class="nav-item logoutBtnClass"><i class="fas fa-sign-out-alt"></i><p>Logout</p></div>
+            </nav>
+        </div>
+
+        <!-- CART -->
+        <div id="cartPage" class="page">
+            <header class="page-header">
+                <i class="fas fa-arrow-left back-btn" data-target="appContainer"></i>
+                <h2>My Cart</h2>
+            </header>
+            <div class="scrollable-body">
+                <div class="inner-content-wrapper">
+                    <div id="cartItemsContainer"></div>
+                    <div id="cart-summary" style="display:none; margin-top:20px; border-top:1px solid var(--border-color); padding-top:20px;">
+                        <div class="coupon-section">
+                            <input type="text" id="couponCodeInput" placeholder="Promo Code (e.g. GOAT20)">
+                            <button id="applyCouponBtn">Apply</button>
+                            <div id="couponMessage" style="width:100%; font-size:0.85em; font-weight:600; margin-top:5px;"></div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Subtotal</span><span id="subtotal-price">Rs. 0.00</span></div>
+                        <div id="discount-row" style="display:none; justify-content:space-between; margin-bottom:8px; color:var(--success); font-weight:600;"><span>Discount applied</span><span id="discount-price">-Rs. 0.00</span></div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Delivery Fee</span><span>Rs. 50.00</span></div>
+                        <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.3em; margin-top:10px;"><span>Total</span><span id="total-price">Rs. 50.00</span></div>
+                        <button class="btn-main" id="goToCheckoutBtn" style="margin-top:20px;">Proceed to Checkout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHECKOUT -->
+        <div id="checkoutPage" class="page">
+            <header class="page-header">
+                <i class="fas fa-arrow-left back-btn" data-target="cartPage"></i>
+                <h2>Checkout</h2>
+            </header>
+            <div class="scrollable-body">
+                <div class="inner-content-wrapper">
+                    <div class="form-group">
+                        <label>Delivery Location</label>
+                        <button class="location-btn" id="geoBtn"><i class="fas fa-location-arrow"></i> Use Current Location</button>
+                        <div id="map-container"><div id="map" style="height:100%; width:100%;"></div></div>
+                        <input type="text" id="addressText" class="form-control" placeholder="House/Flat No., Landmark">
+                        <input type="hidden" id="lat"><input type="hidden" id="lng">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="contactPhone" class="form-control" placeholder="Mobile Number">
+                    </div>
+
+                    <div class="or-divider">VERIFICATION</div>
+
+                    <div class="form-group">
+                        <label>Email Verification (Optional)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="email" id="verifyEmail" class="form-control" readonly style="margin-bottom:0; background:#f5f6fa;">
+                            <button class="verify-btn" id="sendOtpBtn">Send OTP</button>
+                        </div>
+                        <div class="otp-group" id="otpSection">
+                            <input type="text" id="otpCode" class="form-control" placeholder="6-digit code">
+                            <button class="verify-btn" id="verifyOtpBtn" style="background:var(--success);">Verify</button>
+                        </div>
+                        <div id="verifiedBadge" class="verified-badge"><i class="fas fa-check-circle"></i> Verified Successfully</div>
+                        <p id="otpMsg" style="font-size:0.8em; color:var(--light-text); margin-top:5px;"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <div style="padding:15px; background:white; border:2px solid #f1f2f6; border-radius:10px;">
+                            <i class="fas fa-money-bill-wave" style="color:var(--success); margin-right:8px;"></i> Cash on Delivery
+                        </div>
+                    </div>
+
+                    <button class="btn-main" id="placeOrderBtn" disabled>Enter Phone OR Verify Email</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORDERS -->
+        <div id="ordersPage" class="page">
+            <header class="page-header">
+                <i class="fas fa-arrow-left back-btn" data-target="appContainer"></i>
+                <h2>My Orders</h2>
+            </header>
+            <div class="scrollable-body">
+                <div class="inner-content-wrapper" id="ordersListContainer"></div>
+            </div>
+        </div>
+
+        <!-- THANK YOU -->
+        <div id="thankYouPage" class="page">
+            <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; padding:30px; text-align:center;">
+                <div style="width:85px; height:85px; background:#e0f0ff; border-radius:50%; display:flex; justify-content:center; align-items:center; margin-bottom:15px;">
+                    <i class="fas fa-check" style="font-size:2.5em; color:var(--primary-color);"></i>
+                </div>
+                <h2>Order Placed!</h2>
+                <p>Your food is being prepared.</p>
+                <button class="btn-main" id="trackOrderBtn" style="margin-top:25px; max-width:280px;">Track Order</button>
+                <a href="#" id="backToHomeBtn" style="margin-top:15px; color:var(--light-text); font-weight:600; text-decoration:none;">Back to Home</a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        const firebaseConfig = {
+           // FIREBASE CONFIG CODE
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+        let cart = [];
+        let currentUser = null;
+        let map, marker;
+        let allDishesData = [];
+        let ordersListener = null;
+
+        let appliedCoupon = null;
+        let discountAmount = 0;
+        const deliveryFeeAmount = 50;
+
+        const showPage = (id) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === id));
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                if (nav.dataset.page === id || nav.dataset.target === id) nav.classList.add('active');
+                else if (nav.dataset.page || nav.dataset.target) nav.classList.remove('active');
+            });
+
+            if (id === 'checkoutPage') {
+                setTimeout(() => { if(map) map.invalidateSize(); }, 300);
+                if (currentUser) document.getElementById('verifyEmail').value = currentUser.email || '';
+                checkOrderValidity(); 
+            }
+            if (id === 'ordersPage') loadOrders();
+        };
+
+        // Navigation bindings
+        document.querySelectorAll('[data-target], [data-page]').forEach(b => 
+            b.addEventListener('click', (e) => {
+                const target = e.currentTarget.dataset.target || e.currentTarget.dataset.page;
+                if (target) showPage(target);
+            })
+        );
+        document.getElementById('gotoRegister').onclick = (e) => { e.preventDefault(); showPage('registerPage'); };
+        document.getElementById('gotoLogin').onclick = (e) => { e.preventDefault(); showPage('loginPage'); };
+        document.querySelectorAll('.logoutBtnClass').forEach(btn => {
+            btn.onclick = () => { auth.signOut(); cart=[]; appliedCoupon = null; updateCartUI(); };
+        });
+        document.getElementById('goToCheckoutBtn').onclick = () => showPage('checkoutPage');
+        document.getElementById('trackOrderBtn').onclick = () => showPage('ordersPage');
+        document.getElementById('backToHomeBtn').onclick = (e) => { e.preventDefault(); showPage('appContainer'); };
+
+        // Handle Redirect Result for Mobile Google Sign In
+        auth.getRedirectResult().then(result => {
+            if (result && result.user) {
+                currentUser = result.user;
+                showPage('appContainer');
+            }
+        }).catch(e => showError(e.message));
+
+        auth.onAuthStateChanged(u => {
+            if (u) { 
+                currentUser = u; 
+                showPage('appContainer'); 
+                fetchData();
+                document.getElementById('userGreeting').innerHTML = `Hello, ${u.displayName ? u.displayName.split(' ')[0] : 'Guest'}`;
+            } else { 
+                currentUser = null; 
+                showPage('loginPage'); 
+            }
+        });
+
+        const showError = (msg) => {
+            const err = document.getElementById('auth-error');
+            err.textContent = msg;
+            err.style.display = 'block';
+        };
+
+        document.getElementById('loginBtn').onclick = () => {
+            auth.signInWithEmailAndPassword(
+                document.getElementById('loginEmail').value,
+                document.getElementById('loginPassword').value
+            ).catch(e => showError(e.message));
+        };
+
+        // Mobile-aware Google Login
+        document.getElementById('googleBtn').onclick = () => {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                auth.signInWithRedirect(googleProvider).catch(e => showError(e.message));
+            } else {
+                auth.signInWithPopup(googleProvider).catch(e => showError(e.message));
+            }
+        };
+
+        document.getElementById('registerBtn').onclick = () => {
+            const email = document.getElementById('registerEmail').value;
+            const pass = document.getElementById('registerPassword').value;
+            const name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+
+            auth.createUserWithEmailAndPassword(email, pass).then((userCred) => {
+                userCred.user.updateProfile({ displayName: name });
+                db.ref('users/' + userCred.user.uid).set({ name, email, phone, createdAt: new Date().toISOString() });
+            }).catch(e => showError(e.message));
+        };
+
+        // --- OTP via Root Serverless Function ---
+        let isVerified = false;
+        let generatedOTP = null;
+
+        document.getElementById('sendOtpBtn').onclick = () => {
+            const email = document.getElementById('verifyEmail').value;
+            const msg = document.getElementById('otpMsg');
+            if (!email) return alert("No email found.");
+            
+            generatedOTP = Math.floor(100000 + Math.random() * 900000);
+            msg.textContent = "Sending OTP...";
+
+            fetch('/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, otp: generatedOTP })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    msg.textContent = "OTP Sent to " + email;
+                    document.getElementById('otpSection').style.display = 'flex';
+                    document.getElementById('sendOtpBtn').style.display = 'none';
+                } else {
+                    alert("OTP Demo Mode. Code: " + generatedOTP);
+                    document.getElementById('otpSection').style.display = 'flex';
+                    document.getElementById('sendOtpBtn').style.display = 'none';
+                }
+            })
+            .catch(() => {
+                alert("Network error. Test Code: " + generatedOTP);
+                document.getElementById('otpSection').style.display = 'flex';
+                document.getElementById('sendOtpBtn').style.display = 'none';
+            });
+        };
+
+        document.getElementById('verifyOtpBtn').onclick = () => {
+            if (document.getElementById('otpCode').value == generatedOTP) {
+                isVerified = true;
+                document.getElementById('otpSection').style.display = 'none';
+                document.getElementById('verifiedBadge').style.display = 'flex';
+                document.getElementById('otpMsg').textContent = "";
+                checkOrderValidity();
+            } else {
+                document.getElementById('otpMsg').textContent = "Incorrect OTP.";
+            }
+        };
+
+        const phoneInput = document.getElementById('contactPhone');
+        const orderBtn = document.getElementById('placeOrderBtn');
+        phoneInput.addEventListener('input', checkOrderValidity);
+
+        function checkOrderValidity() {
+            if (phoneInput.value.trim().length > 5 || isVerified) {
+                orderBtn.disabled = false; orderBtn.style.opacity = '1'; orderBtn.textContent = "Confirm Order";
+            } else {
+                orderBtn.disabled = true; orderBtn.style.opacity = '0.6'; orderBtn.textContent = "Enter Phone OR Verify Email";
+            }
+        }
+
+        // --- Geolocation Map ---
+        document.getElementById('geoBtn').addEventListener('click', () => {
+            const btn = document.getElementById('geoBtn');
+            document.getElementById('map-container').style.display = 'block';
+            if (!map) {
+                map = L.map('map').setView([27.7172, 85.3240], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                map.on('click', (e) => handleLocationUpdate(e.latlng.lat, e.latlng.lng));
+            }
+            map.invalidateSize();
+            if (navigator.geolocation) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+                navigator.geolocation.getCurrentPosition(
+                    (p) => {
+                        handleLocationUpdate(p.coords.latitude, p.coords.longitude);
+                        map.setView([p.coords.latitude, p.coords.longitude], 16);
+                        btn.innerHTML = '<i class="fas fa-check"></i> Location Set';
+                    },
+                    () => { alert("Permission denied."); btn.innerHTML = 'Use Current Location'; }
+                );
+            }
+        });
+
+        function handleLocationUpdate(lat, lng) {
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lng]).addTo(map);
+            document.getElementById('lat').value = lat; document.getElementById('lng').value = lng;
+            const addr = document.getElementById('addressText');
+            addr.value = "Fetching address...";
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`)
+                .then(r => r.json())
+                .then(d => addr.value = `${d.locality || d.city || ''}, ${d.principalSubdivision || ''}, ${d.countryName || ''}`)
+                .catch(() => addr.value = "");
+        }
+
+        // --- REAL-TIME DATA FETCHING ---
+        function fetchData() {
+            db.ref('restaurants').on('value', s => {
+                const c = document.getElementById('restaurantsContainer');
+                c.innerHTML = '';
+                s.forEach(r => {
+                    const rest = r.val();
+                    c.innerHTML += `
+                        <div class="card">
+                            <img src="${rest.imageUrl || ''}">
+                            <div class="card-content">
+                                <h3>${rest.name || 'Restaurant'}</h3>
+                                <p><i class="fas fa-star" style="color:#ff9f1c"></i> ${rest.rating || '4.5'}</p>
+                            </div>
+                        </div>`;
+                });
+            });
+
+            db.ref('dishes').on('value', s => {
+                allDishesData = [];
+                s.forEach(d => {
+                    allDishesData.push({ key: d.key, ...d.val() });
+                });
+                renderDishes(allDishesData);
+            });
+        }
+
+        function renderDishes(dishes) {
+            const c = document.getElementById('dishesContainer');
+            c.innerHTML = '';
+            if (!dishes || dishes.length === 0) {
+                c.innerHTML = '<p style="padding:10px; color:#666;">No dishes found.</p>';
+                return;
+            }
+
+            let htmlBuffer = '';
+            dishes.forEach(d => {
+                const safeName = (d.name || "").replace(/'/g, "\\'");
+                htmlBuffer += `
+                    <div class="card">
+                        <img src="${d.imageUrl || ''}">
+                        <button class="add-btn" onclick="addToCart('${d.key}','${safeName}',${d.price || 0},'${d.imageUrl || ''}')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <div class="card-content">
+                            <h3>${d.name || 'Dish'}</h3>
+                            <p>Rs. ${d.price || 0}</p>
+                        </div>
+                    </div>`;
+            });
+            c.innerHTML = htmlBuffer;
+        }
+
+        window.filterCategory = (cat) => {
+            if (!cat) {
+                renderDishes(allDishesData);
+            } else {
+                renderDishes(allDishesData.filter(d => (d.name || "").toLowerCase().includes(cat.toLowerCase())));
+            }
+        };
+
+        document.querySelector('.search-bar input').addEventListener('input', (e) => {
+            const search = (e.target.value || "").toLowerCase();
+            renderDishes(allDishesData.filter(d => (d.name || "").toLowerCase().includes(search)));
+        });
+
+        document.getElementById('applyCouponBtn').addEventListener('click', () => {
+            const input = document.getElementById('couponCodeInput').value.trim().toUpperCase();
+            const msg = document.getElementById('couponMessage');
+            if (input === 'GOAT20') {
+                appliedCoupon = 'GOAT20';
+                msg.textContent = '20% Discount Applied!';
+                msg.style.color = 'var(--success)';
+            } else if (input === 'FLAT50') {
+                appliedCoupon = 'FLAT50';
+                msg.textContent = 'Rs. 50 Discount Applied!';
+                msg.style.color = 'var(--success)';
+            } else {
+                appliedCoupon = null;
+                msg.textContent = 'Invalid promo code.';
+                msg.style.color = 'var(--danger)';
+            }
+            updateCartUI();
+        });
+
+        window.addToCart = (id, name, price, img) => {
+            const ex = cart.find(i => i.id === id);
+            ex ? ex.quantity++ : cart.push({ id, name, price, img, quantity: 1 });
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            document.getElementById('cart-count').textContent = cart.reduce((a, b) => a + b.quantity, 0);
+            const c = document.getElementById('cartItemsContainer');
+            if (cart.length === 0) {
+                c.innerHTML = '<p style="text-align:center; padding:20px; color:var(--light-text);">Your cart is empty.</p>';
+                document.getElementById('cart-summary').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('cart-summary').style.display = 'block';
+            c.innerHTML = '';
+            let sub = 0;
+
+            cart.forEach(i => {
+                sub += i.price * i.quantity;
+                c.innerHTML += `
+                    <div class="cart-item">
+                        <img src="${i.img}">
+                        <div style="flex:1;">
+                            <h4 style="margin:0 0 4px 0; font-size:0.95em;">${i.name}</h4>
+                            <p style="margin:0; font-weight:600; color:var(--primary-color); font-size:0.9em;">Rs. ${i.price}</p>
+                        </div>
+                        <div class="qty-controls">
+                            <button onclick="modQty('${i.id}',-1)">-</button>
+                            <span>${i.quantity}</span>
+                            <button onclick="modQty('${i.id}',1)">+</button>
+                        </div>
+                    </div>`;
+            });
+
+            discountAmount = 0;
+            if (appliedCoupon === 'GOAT20') discountAmount = sub * 0.20;
+            else if (appliedCoupon === 'FLAT50') discountAmount = 50;
+            if (discountAmount > sub) discountAmount = sub;
+
+            const finalTotal = (sub - discountAmount) + deliveryFeeAmount;
+            document.getElementById('subtotal-price').textContent = `Rs. ${sub.toFixed(2)}`;
+            const discRow = document.getElementById('discount-row');
+            if (discountAmount > 0) {
+                discRow.style.display = 'flex';
+                document.getElementById('discount-price').textContent = `-Rs. ${discountAmount.toFixed(2)}`;
+            } else {
+                discRow.style.display = 'none';
+            }
+            document.getElementById('total-price').textContent = `Rs. ${finalTotal.toFixed(2)}`;
+        }
+
+        window.modQty = (id, n) => {
+            const item = cart.find(x => x.id === id);
+            if (item) {
+                item.quantity += n;
+                if (item.quantity <= 0) cart = cart.filter(x => x.id !== id);
+                updateCartUI();
+            }
+        };
+
+        orderBtn.onclick = () => {
+            const phone = phoneInput.value.trim();
+            const address = document.getElementById('addressText').value;
+            if (!address) return alert("Please provide an address.");
+
+            const sub = cart.reduce((a, b) => a + b.price * b.quantity, 0);
+            const finalAmt = (sub - discountAmount + deliveryFeeAmount).toFixed(2);
+
+            const order = {
+                userId: currentUser.uid,
+                email: currentUser.email || "guest@javagoat.com",
+                phone: phone || "Verified via Email",
+                address,
+                location: { lat: document.getElementById('lat').value, lng: document.getElementById('lng').value },
+                items: cart,
+                subtotal: sub.toFixed(2),
+                discount: discountAmount.toFixed(2),
+                couponUsed: appliedCoupon || "None",
+                total: finalAmt,
+                status: 'Placed',
+                method: 'Payment After Delivery',
+                timestamp: new Date().toISOString()
+            };
+
+            db.ref('orders').push(order).then(() => {
+                cart = []; appliedCoupon = null; updateCartUI();
+                showPage('thankYouPage');
+            });
+        };
+
+        function loadOrders() {
+            const container = document.getElementById('ordersListContainer');
+            if (ordersListener) { ordersListener.off(); ordersListener = null; }
+            if (!currentUser) return;
+
+            container.innerHTML = '<p style="text-align:center; padding:20px;">Loading...</p>';
+            ordersListener = db.ref('orders');
+            ordersListener.on('value', s => {
+                container.innerHTML = '';
+                const arr = [];
+                s.forEach(child => { 
+                    if (child.val().userId === currentUser.uid) {
+                        arr.push({ k: child.key, ...child.val() }); 
+                    }
+                });
+                if (arr.length === 0) return container.innerHTML = '<p style="text-align:center; color:#777;">No active orders.</p>';
+
+                arr.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(o => {
+                    let st = o.status, s1='', s2='', s3='', s4='';
+                    if (st === 'Placed') s1 = 'active';
+                    else if (st === 'Preparing') { s1 = 'passed'; s2 = 'active'; }
+                    else if (st === 'Out for Delivery') { s1 = s2 = 'passed'; s3 = 'active'; }
+                    else if (st === 'Delivered') { s1 = s2 = s3 = 'passed'; s4 = 'active'; }
+
+                    container.innerHTML += `
+                        <div class="order-card">
+                            <div style="display:flex;justify-content:space-between;font-weight:700;"><span>#${o.k.substring(1, 6)}</span><span style="color:var(--primary-color)">${st}</span></div>
+                            <p style="color:var(--light-text); margin:8px 0; font-size:0.9em;">${o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</p>
+                            <div style="font-weight:700; margin-top:8px;">Total: Rs. ${o.total}</div>
+                            <div class="track-bar">
+                                <div class="track-step ${s1}"><div class="dot"></div><p>Placed</p></div>
+                                <div class="track-step ${s2}"><div class="dot"></div><p>Prep</p></div>
+                                <div class="track-step ${s3}"><div class="dot"></div><p>On Way</p></div>
+                                <div class="track-step ${s4}"><div class="dot"></div><p>Done</p></div>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
+    </script>
+</body>
+</html>
